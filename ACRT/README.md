@@ -7,6 +7,8 @@ ACRT (Accelerated crucible rotation) is a technique initially used for the rotat
 
 Motor rotation rate is increased and decreased in a periodic way, optionally changing also the direction.
 
+>[1] H. J. Scheel, E. O. Schulz-Dubois, Flux growth of large crystals by accelerated crucible-rotation technique. Journal of Crystal Growth 8 (1971) 304-306.
+
 ## Schematics
 
 - Max. motor current = 0.5 A
@@ -22,8 +24,6 @@ Motor rotation rate is increased and decreased in a periodic way, optionally cha
 ## Motor box
 
 ![pic](photo/ACRT_test.jpg).
-
-[1] H. J. Scheel, E. O. Schulz-Dubois, Flux growth of large crystals by accelerated crucible-rotation technique. Journal of Crystal Growth 8 (1971) 304-306.
 
 
 ## Acknowledgements
