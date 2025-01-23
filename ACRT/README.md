@@ -25,10 +25,13 @@ Motor rotation rate is increased and decreased in a periodic way, optionally cha
 
 ![pic](photo/ACRT_test.jpg).
 
-## Arduino code
+## Arduino code (acrt_clean.ino)
 
->TODO
-
+- Motor is controlled with a 31 kHz PWM signal
+- Motor recipe is defined with 3 voltage levels (duty cycle in %, "-" changes direction) and 4 time intervals (seconds)
+- Parameters for motor recipe can be adjusted with 3 buttons on a 2-line display
+- Last parameters are stored in EEPROM memory
+- Auto backlight-off for the display
 
 ## Acknowledgements
 
