@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/920723535.svg)](https://doi.org/10.5281/zenodo.15214425)
+
 # exp-motor-control
 
 Motor control using Arduino
