@@ -11,11 +11,14 @@ The Stepper motor is controlled by generating pulses at a given frequency.
 
 ## Wiring
 
+Motors:
+
 - Arduino pin D9 = Stepper direction
 - Arduino pin D8 = Stepper speed
 - Arduino pin D5 = DC motor direction
 - Arduino pin D11 = DC motor speed
 
+Buttons:
 
 - Arduino pin D2 = Button SWITCH
 - Arduino pin D3 = Button UP
@@ -23,6 +26,7 @@ The Stepper motor is controlled by generating pulses at a given frequency.
 
 The other side of the buttons are connected to Arduino GND.
 
+LCD: 
 
 - Arduino pin D20 = LCD SDA
 - Arduino pin D21 = LCD SCL
@@ -45,15 +49,15 @@ The LCD allows to adjust motor parameters using 3 buttons:
 - SWITCH: consecutively switch between parameters (LCD screens). **To apply the changed value, click to the last screen, until "Parameters changed" is displayed**. The second last screen shows current values of time and speed. The last screen is empty. Press the button again to switch to the first screen.
 - UP/DOWN: increase/decrease parameter value in predefined steps. A short press of 0.3 sec changes the value by one step. Holding the button for 3 s and 6 s increases the step by x10 and x100.
 
-Parameter currently implemented:
+Parameters currently implemented:
 - 01 V_H  (+-100%)   = Rotation velocity, high value
 - 02 V_M  (+-100%)   = Rotation velocity, mid value
 - 03 V_L  (+-100%)   = Rotation velocity, low value
-- 04 T_H  (0-10000s) = Time interval, high value
-- 05 T_L  (0-10000s) = Time interval, low value
-- 06 T_TH (0-1000s)  = Transition time, high value
-- 07 T_TL (0-1000s)  = Transition time, low value
-- 08 V_P  (+-1000Hz) = Pull velocity (step motor)
+- 04 T_H  (0-10000s) = Time interval for high velocity
+- 05 T_L  (0-10000s) = Time interval for low velocity
+- 06 T_TH (0-1000s)  = Transition time for high velocity
+- 07 T_TL (0-1000s)  = Transition time for low velocity
+- 08 V_P  (+-1000Hz) = Pull velocity (stepper motor)
 
 The last parameter set is automatically stored in EEPROM memory. It is loaded at Arduino startup.
 
