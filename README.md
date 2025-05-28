@@ -12,6 +12,7 @@ The project is developed and maintained by the [Model experiments group](https:/
 
 Implemented solutions for motor control:
 - [ACRT](ACRT): Periodic change of rotation direction with a DC motor
+- [MunCZ](MunCZ): DC motor with a recipe and stepper motor with a fixed speed
 
 ## Acknowledgements
 
