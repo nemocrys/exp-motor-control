@@ -15,6 +15,8 @@ const int pinLinSpeed2 = 8;
 const int pinRotDir = 5;
 const int pinRotSpeed = 11;
 
+const int pinFanSpeed = 12;
+
 const int pinBut1 = 2; //switch
 const int pinBut2 = 3; //up
 const int pinBut3 = 4; //down
@@ -25,7 +27,7 @@ const int pinLight = 7;
 
 //SCL is pin A5 and SDA is pin A4 on the Nano
 
-const bool useserial = true; //enable serial output
+const bool useserial = false; //enable serial output
 bool serialonce; // write one recipe
 
 // -------------------------------------------------------------------------------- LCD
@@ -44,14 +46,14 @@ unsigned long lcdLastLight;
 #define DDRotDirCW  HIGH
 #define DDRotDirCCW LOW
 
-// internal int variables for rotation
-int speedHigh; //%
-int speedMid; //%
-int speedLow; //%
-int timeHigh; //sec
-int timeLow; //sec
-int timeTrHigh; //sec/10!!!
-int timeTrLow; //sec/10!!!
+// internal INT (not float!!) variables for rotation
+int speedHigh; // [%/10]
+int speedMid; //  [%/10]
+int speedLow; //  [%/10]
+int timeHigh; //  [sec/10]
+int timeLow; //   [sec/10]
+int timeTrHigh; //[sec/10]
+int timeTrLow; // [sec/10]
 
 unsigned long tt1, tt2, tt3, tt4, tt5, tt6, tttrhigh, tttrlow;
 unsigned long tt;
@@ -66,12 +68,19 @@ float motRotSpeed; //value including direction
 #define DDLinDirUp HIGH
 #define DDLinDirDown  LOW
 
-// internal int variable for pulling
-int speedPull; // currently: step frequency in Hz
+// internal INT (not float!!) variable for pulling
+int speedPull; // currently: step frequency in [Hz/10]
 
 int motLinDir;
 long motLinPeriod = 0, motLinPeriodOld = 0; //in milliseconds
 float motLinSpeed; //value including direction
+
+// internal INT (not float!!) variable for pulling
+int speedFan; // [%]
+
+int motFanDuty, motFanDutyOld;      //PWM duty cycle 0-255
+float motFanSpeed;
+
 
 // ---
 
@@ -87,6 +96,7 @@ if (useserial)
   Serial.print("timeTrHigh = ");  Serial.println(String(timeTrHigh));
   Serial.print("timeTrLow = ");  Serial.println(String(timeTrLow));
   Serial.print("speedPull = ");  Serial.println(String(speedPull));
+  Serial.print("speedFan = ");  Serial.println(String(speedFan));
   serialonce=false;
   }
 
@@ -108,10 +118,10 @@ while (motRotDuty>0)
 
 // convert to millisec
 tt1 = (long)timeTrHigh*100;
-tt2 = tt1 + (long)timeHigh*1000;
+tt2 = tt1 + (long)timeHigh*100;
 tt3 = tt2 + (long)timeTrHigh*100;
 tt4 = tt3 + (long)timeTrLow*100;
-tt5 = tt4 + (long)timeLow*1000;
+tt5 = tt4 + (long)timeLow*100;
 tt6 = tt5 + (long)timeTrLow*100;
 tttrhigh = (long)timeTrHigh*100;
 tttrlow = (long)timeTrLow*100;
@@ -127,6 +137,10 @@ motLinDir = 0;
 motLinPeriod = 0; 
 motLinPeriodOld = 0;
 motLinSpeed = 0;
+
+motFanDuty = 0;
+motFanDutyOld = 0;
+motFanSpeed = 0;
 }
 
 // -------------------------------------------------------------------------------- Menu
@@ -135,7 +149,7 @@ const int numOfInputs = 3;
 const int inputPins[numOfInputs] = {pinBut1,pinBut2,pinBut3};
 int inputState[numOfInputs] = {0,0,0};
 unsigned long inputTime[numOfInputs] = {0,0,0};
-const int numOfScreens = 8;
+const int numOfScreens = 9;
 int currentScreen;
 
 
@@ -144,38 +158,41 @@ String screens[numOfScreens][2] =
 {"01 V_H", "(+-100%)"},
 {"02 V_M", "(+-100%)"},
 {"03 V_L", "(+-100%)"},
-{"04 T_H", "(0-10000s)"},
-{"05 T_L", "(0-10000s)"},
+{"04 T_H", "(0-1000s)"},
+{"05 T_L", "(0-1000s)"},
 {"06 T_TH", "(0-1000s)"},
 {"07 T_TL", "(0-1000s)"},
-{"08 V_P", "(+-1000Hz)"}
+{"08 V_P", "(+-1000Hz)"},
+{"09 V_F", "(0-100%)"}
 };
 
 
 //value, increment, min, max, oldvalue
 float parameters[numOfScreens][5]
 {
-{0,1,-100,100,0},
-{0,1,-100,100,0},
-{0,1,-100,100,0},
-{0,1,0,10000,0},
-{0,1,0,10000,0},
+{0,0.1,-100,100,0},
+{0,0.1,-100,100,0},
+{0,0.1,-100,100,0},
 {0,0.1,0,1000,0},
 {0,0.1,0,1000,0},
-{0,1,-1000,1000,0}
+{0,0.1,0,1000,0},
+{0,0.1,0,1000,0},
+{0,0.1,-1000,1000,0},
+{0,1,0,100,0}
 };
 
 
 void getparams() 
 {
-parameters[0][0] = speedHigh;
-parameters[1][0] = speedMid;
-parameters[2][0] = speedLow;
-parameters[3][0] = timeHigh;
-parameters[4][0] = timeLow;
+parameters[0][0] = 0.1*speedHigh;
+parameters[1][0] = 0.1*speedMid;
+parameters[2][0] = 0.1*speedLow;
+parameters[3][0] = 0.1*timeHigh;
+parameters[4][0] = 0.1*timeLow;
 parameters[5][0] = 0.1*timeTrHigh;
 parameters[6][0] = 0.1*timeTrLow;
-parameters[7][0] = speedPull;
+parameters[7][0] = 0.1*speedPull;
+parameters[8][0] = speedFan;
 for (int i = 0; i < numOfScreens; i++) { parameters[i][4] = parameters[i][0];  } // store old values
 }
 
@@ -184,14 +201,15 @@ for (int i = 0; i < numOfScreens; i++) { parameters[i][4] = parameters[i][0];  }
 bool setparams() 
 {
 bool changed = false;
-if (parameters[0][0] != parameters[0][4])  { speedHigh = parameters[0][0];  changed=true; }
-if (parameters[1][0] != parameters[1][4])  { speedMid = parameters[1][0];  changed=true; }
-if (parameters[2][0] != parameters[2][4])  { speedLow = parameters[2][0];  changed=true; }
-if (parameters[3][0] != parameters[3][4])  { timeHigh = parameters[3][0];  changed=true; }
-if (parameters[4][0] != parameters[4][4])  { timeLow = parameters[4][0];  changed=true; }
+if (parameters[0][0] != parameters[0][4])  { speedHigh = 10*parameters[0][0];  changed=true; }
+if (parameters[1][0] != parameters[1][4])  { speedMid = 10*parameters[1][0];  changed=true; }
+if (parameters[2][0] != parameters[2][4])  { speedLow = 10*parameters[2][0];  changed=true; }
+if (parameters[3][0] != parameters[3][4])  { timeHigh = 10*parameters[3][0];  changed=true; }
+if (parameters[4][0] != parameters[4][4])  { timeLow = 10*parameters[4][0];  changed=true; }
 if (parameters[5][0] != parameters[5][4])  { timeTrHigh = 10*parameters[5][0];  changed=true; }
 if (parameters[6][0] != parameters[6][4])  { timeTrLow = 10*parameters[6][0];  changed=true; }
-if (parameters[7][0] != parameters[7][4])  { speedPull = parameters[7][0];  changed=true; }
+if (parameters[7][0] != parameters[7][4])  { speedPull = 10*parameters[7][0];  changed=true; }
+if (parameters[8][0] != parameters[8][4])  { speedFan = parameters[8][0];  changed=true; }
 return changed;
 }
 
@@ -222,6 +240,7 @@ const int timeLowAddr = 8;
 const int timeTrHighAddr = 10;
 const int timeTrLowAddr = 12;
 const int speedPullAddr = 14;
+const int speedFanAddr = 16;
 
 
 void EEPROM_write(int address, int value)
@@ -242,15 +261,16 @@ int EEPROM_read(int address)
 
 void loadparams()
 {
-int val;
-val = EEPROM_read(speedHighAddr);  if (val>=-100 && val<=100) speedHigh = val;
-val = EEPROM_read(speedMidAddr);   if (val>=-100 && val<=100) speedMid = val;
-val = EEPROM_read(speedLowAddr);   if (val>=-100 && val<=100) speedLow = val;
+int val; // Limits are in units for internal INT variables: %/10, sec/10
+val = EEPROM_read(speedHighAddr);  if (val>=-1000 && val<=1000) speedHigh = val;
+val = EEPROM_read(speedMidAddr);   if (val>=-1000 && val<=1000) speedMid = val;
+val = EEPROM_read(speedLowAddr);   if (val>=-1000 && val<=1000) speedLow = val;
 val = EEPROM_read(timeHighAddr);   if (val>=0 && val<=10000) timeHigh = val;
 val = EEPROM_read(timeLowAddr);    if (val>=0 && val<=10000) timeLow = val;
-val = EEPROM_read(timeTrHighAddr); if (val>=0 && val<=1000) timeTrHigh = val;  
-val = EEPROM_read(timeTrLowAddr); if (val>=0 && val<=1000) timeTrLow = val;  
-val = EEPROM_read(speedPullAddr); if (val>=-1000 && val<=1000) speedPull = val;  
+val = EEPROM_read(timeTrHighAddr); if (val>=0 && val<=10000) timeTrHigh = val;  
+val = EEPROM_read(timeTrLowAddr); if (val>=0 && val<=10000) timeTrLow = val;  
+val = EEPROM_read(speedPullAddr); if (val>=-10000 && val<=10000) speedPull = val;  
+val = EEPROM_read(speedFanAddr); if (val>=0 && val<=100) speedFan = val; 
 }
 
 
@@ -264,6 +284,7 @@ EEPROM_write(timeLowAddr, timeLow);
 EEPROM_write(timeTrHighAddr, timeTrHigh);
 EEPROM_write(timeTrLowAddr, timeTrLow);
 EEPROM_write(speedPullAddr, speedPull);
+EEPROM_write(speedFanAddr, speedFan);
 }
 
 // --------------------------------------------------------------------------------
@@ -280,7 +301,11 @@ void setup() {
   
   // Motor
 
-  TCCR2B = TCCR2B & B11111000 | B00000001; //Set PWM frequency for D3 & D11 from 980 Hz to 31372.55 Hz
+  //TCCR2B = TCCR2B & B11111000 | B00000001; //Set PWM frequency for D3 & D11 from 980 Hz to 31372.55 Hz
+  // Set PWM freq. on Arduino Mega pins 11 and 12 (Timer 1) to 31000 Hz
+  int myEraser = 7;  TCCR1B &= ~myEraser; 
+  int myPrescaler = 1;  TCCR1B |= myPrescaler; // 1->31 kHz, 2->4 kHz, 3->490 Hz (default), 4->120 Hz, 5->30 Hz, 6-> <20 Hz
+
 
   Timer4.initialize(1000);
   
@@ -292,14 +317,17 @@ void setup() {
   pinMode(pinLinDir, OUTPUT);
   pinMode(pinLinSpeed2, OUTPUT); 
 
-  speedHigh = 50;
+  pinMode(pinFanSpeed, OUTPUT); // start in low-impedance state 
+
+  speedHigh = 500;   // 50%
   speedMid = 0;
-  speedLow = -50;  
-  timeHigh = 10; // 10 sec
-  timeLow = 10; // 10 sec
-  timeTrHigh = 2; // 2 sec
-  timeTrLow = 2; // 2 sec
-  speedPull = 10; //10 Hz
+  speedLow = -500;   // 50%
+  timeHigh = 100;    // 10 sec
+  timeLow = 100;     // 10 sec
+  timeTrHigh = 20;   // 2 sec
+  timeTrLow = 20;    // 2 sec
+  speedPull = 100;   // 10 Hz
+  speedFan = 0;
   //saveparams(); //uncomment later!!!
   loadparams(); //load from memory
   resetmotor(false); //false = do not show on LCD
@@ -436,6 +464,7 @@ if (nowdelta >= 10) //each 10 ms
   if ( tt>=tt4 && tt<tt5 ) motRotSpeed = speedLow;
   if ( tt>=tt5 && tt<tt6 ) motRotSpeed = speedLow + (speedMid-speedLow) * ((float)(tt-tt5))/((float)tttrlow);
 
+  motRotSpeed = 0.1 * motRotSpeed; // convert from [%/10] to [%] 
   if (abs(motRotSpeed)>0) motRotDuty = (int)ceil(255 * 0.01 * abs(motRotSpeed)); else motRotDuty=0;  
   if (motRotDuty>255) motRotDuty=255;
   if (motRotSpeed>0) motRotDir=1; else motRotDir=0;
@@ -450,7 +479,8 @@ if (nowdelta >= 10) //each 10 ms
 
   // Pulling
 
-  motLinSpeed = speedPull; // currently: both in Hz incl. direction!
+  motLinSpeed = speedPull; // incl. direction!
+  motLinSpeed = 0.1 * motLinSpeed; // convert from [Hz/10] to [Hz] 
     
   if (abs(motLinSpeed)>0) motLinPeriod = floor( 1000000 / abs(motLinSpeed) ); else motLinPeriod=0; // microseconds for timer!
   if (motLinSpeed>0) motLinDir=1; else motLinDir=0; 
@@ -469,12 +499,26 @@ if (nowdelta >= 10) //each 10 ms
     motLinPeriodOld=motLinPeriod; 
     } 
 
+  // Fan
+
+  motFanSpeed = speedFan; 
+
+  if (abs(motFanSpeed)>0) motFanDuty = (int)ceil(255 * 0.01 * abs(motFanSpeed)); else motFanDuty=0;  
+  if (motFanDuty>255) motFanDuty=255;
+
+  if (motFanDuty!=motFanDutyOld && motFanDuty<=255 && motFanDuty>=0) 
+    { 
+    analogWrite(pinFanSpeed, motFanDuty);  
+    motFanDutyOld=motFanDuty;
+    }
+
     
   if (useserial && serialonce)
     {
     //50 chars & 19200 bps = 3 ms
     Serial.print(String(motLastUpdate)+" "+String(tt)+" "+String(motRotSpeed)+" "+String(motRotDuty)+" "+String(motRotDir));
-    Serial.println(" "+String(motLinSpeed)+" "+String(motLinPeriod)+" "+String(motLinDir));
+    Serial.print(" "+String(motLinSpeed)+" "+String(motLinPeriod)+" "+String(motLinDir));
+    Serial.println(" "+String(motFanSpeed)+" "+String(motFanDuty));
     }
 
   motLastUpdate = now;
@@ -498,8 +542,8 @@ if (nowdelta>1000 || tt==0) //align with recipe interval
 
   if (currentScreen==numOfScreens)
     { 
-    char stra[5];  dtostrf(motRotSpeed,1,0,stra);
-    char strc[5];  dtostrf(motLinSpeed,1,0,strc);
+    char stra[5];  dtostrf(motRotSpeed,1,1,stra);
+    char strc[5];  dtostrf(motLinSpeed,1,1,strc);
     lcd.setCursor(0,0);  lcd.print("R=      P=      ");
     lcd.setCursor(2,0);  lcd.print(stra);
     lcd.setCursor(10,0);  lcd.print(strc);

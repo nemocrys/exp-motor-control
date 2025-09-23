@@ -9,6 +9,8 @@ The DC Motor is controlled by changing the duty cycle of a 31 kHz PWM signal.
 
 The Stepper motor is controlled by generating pulses at a given frequency.
 
+Additional 31 kHz PWM signal can be used to control a fan.
+
 ## Wiring
 
 Motors:
@@ -17,6 +19,7 @@ Motors:
 - Arduino pin D8 = Stepper speed
 - Arduino pin D5 = DC motor direction
 - Arduino pin D11 = DC motor speed
+- Arduino pin D12 = Fan speed
 
 Buttons:
 
@@ -53,13 +56,14 @@ Parameters currently implemented:
 - 01 V_H  (+-100%)   = Rotation velocity, high value
 - 02 V_M  (+-100%)   = Rotation velocity, mid value
 - 03 V_L  (+-100%)   = Rotation velocity, low value
-- 04 T_H  (0-10000s) = Time interval for high velocity
-- 05 T_L  (0-10000s) = Time interval for low velocity
+- 04 T_H  (0-1000s) = Time interval for high velocity
+- 05 T_L  (0-1000s) = Time interval for low velocity
 - 06 T_TH (0-1000s)  = Transition time for high velocity
 - 07 T_TL (0-1000s)  = Transition time for low velocity
 - 08 V_P  (+-1000Hz) = Pull velocity (stepper motor)
+- 09 V_F  (0-100%) = Fan speed 
 
-The last parameter set is automatically stored in EEPROM memory. It is loaded at Arduino startup.
+The last parameter set is automatically stored in EEPROM memory (precision of once decimal place). It is loaded at Arduino startup.
 
 ## Acknowledgements
 
