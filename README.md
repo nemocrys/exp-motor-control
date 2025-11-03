@@ -12,7 +12,9 @@ The project is developed and maintained by the [Model experiments group](https:/
 
 Implemented solutions for motor control:
 - [ACRT](ACRT): Periodic change of rotation direction with a DC motor
-- [MunCZ](MunCZ): DC motor with a recipe and stepper motor with a fixed speed
+- [MunCZ](muncz_clean): DC motor with a recipe and stepper motor with a fixed speed
+- [fan_pwm](fan_pwm): Regulate and measure rotation speed of 4 wire PC fan including ramps
+
 
 ## Acknowledgements
 
