@@ -9,13 +9,13 @@ TODO
 
 // -------------------------------------------------------------------------------- Pins
 
-const int pinLinDir = 9; 
-const int pinLinSpeed2 = 8;
+const int pinLinDir = 22;  // vorher 9
+const int pinLinSpeed2 = 8; // vorher 8
 
-const int pinRotDir = 5;
-const int pinRotSpeed = 11;
+const int pinRotSpeed = 11; // nur 11 oder 12 benutzen, da sie für 31kHz konfiguriert sind
+const int pinRotDir = 23;
 
-const int pinFanSpeed = 12;
+const int pinFanSpeed = 52; // 12 benutzen wenn fan angeschlossen wird
 
 const int pinBut1 = 2; //switch
 const int pinBut2 = 3; //up
@@ -27,7 +27,7 @@ const int pinLight = 7;
 
 //SCL is pin A5 and SDA is pin A4 on the Nano
 
-const bool useserial = false; //enable serial output
+const bool useserial = true; //enable serial output
 bool serialonce; // write one recipe
 
 // -------------------------------------------------------------------------------- LCD
@@ -64,25 +64,22 @@ float motRotSpeed; //value including direction
 
 // ---
 
-// positive speed = up
-#define DDLinDirUp HIGH
-#define DDLinDirDown  LOW
+#define DDLinDirUp LOW    // motLinSpeed>0 = clockwise rotation = translation up (pulling) -> DirPin LOW
+#define DDLinDirDown HIGH // motLinSpeed<0 = counter-clockwise rotation = translation down -> DirPin HIGH
 
 // internal INT (not float!!) variable for pulling
 int speedPull; // currently: step frequency in [Hz/10]
-
 int motLinDir;
 long motLinPeriod = 0, motLinPeriodOld = 0; //in milliseconds
 float motLinSpeed; //value including direction
 
-// internal INT (not float!!) variable for pulling
+// internal INT (not float!!) variable for fan speed
 int speedFan; // [%]
-
 int motFanDuty, motFanDutyOld;      //PWM duty cycle 0-255
 float motFanSpeed;
 
 
-// ---
+// -------------------------------------------------------------------------------- Motor reset
 
 void resetmotor(bool showlcd) 
 {
@@ -306,9 +303,10 @@ void setup() {
   int myEraser = 7;  TCCR1B &= ~myEraser; 
   int myPrescaler = 1;  TCCR1B |= myPrescaler; // 1->31 kHz, 2->4 kHz, 3->490 Hz (default), 4->120 Hz, 5->30 Hz, 6-> <20 Hz
 
-
+  // Initialize timer for stepper pwm output
   Timer4.initialize(1000);
-  
+
+  // set pinMode to digital output (initialization)
   pinMode(pinRotDir, OUTPUT);    
   pinMode(pinRotSpeed, OUTPUT); // start in low-impedance state 
   pinMode(pinLight, OUTPUT);
@@ -319,18 +317,18 @@ void setup() {
 
   pinMode(pinFanSpeed, OUTPUT); // start in low-impedance state 
 
-  speedHigh = 500;   // 50%
+  speedHigh = 150;
   speedMid = 0;
-  speedLow = -500;   // 50%
-  timeHigh = 100;    // 10 sec
-  timeLow = 100;     // 10 sec
-  timeTrHigh = 20;   // 2 sec
-  timeTrLow = 20;    // 2 sec
-  speedPull = 100;   // 10 Hz
+  speedLow = -150;
+  timeHigh = 550;
+  timeLow = 550;
+  timeTrHigh = 25; 
+  timeTrLow = 25;   
+  speedPull = 20; 
   speedFan = 0;
-  //saveparams(); //uncomment later!!!
-  loadparams(); //load from memory
-  resetmotor(false); //false = do not show on LCD
+  saveparams(); //uncomment later!!!
+  //loadparams(); //load from memory
+  resetmotor(true); //default true | false = do not show on LCD
 
   // LCD
 
@@ -472,12 +470,12 @@ if (nowdelta >= 10) //each 10 ms
   if (motRotDir==1) digitalWrite(pinRotDir, DDRotDirCW); else digitalWrite(pinRotDir, DDRotDirCCW);
   if (motRotDuty!=motRotDutyOld && motRotDuty<=255 && motRotDuty>=0) 
     { 
-    analogWrite(pinRotSpeed, motRotDuty);  
+    analogWrite(pinRotSpeed, motRotDuty);  // set motRotDuty as duty range PWM (31kHz)
     motRotDutyOld=motRotDuty;
     }
 
 
-  // Pulling
+  // Pulling, stepper motor is set via pwm frequency modulation -> Timer4 is set up here
 
   motLinSpeed = speedPull; // incl. direction!
   motLinSpeed = 0.1 * motLinSpeed; // convert from [Hz/10] to [Hz] 

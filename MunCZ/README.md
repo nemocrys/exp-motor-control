@@ -15,11 +15,11 @@ Additional 31 kHz PWM signal can be used to control a fan.
 
 Motors:
 
-- Arduino pin D9 = Stepper direction
+- Arduino pin D22 = Stepper direction
 - Arduino pin D8 = Stepper speed
-- Arduino pin D5 = DC motor direction
+- Arduino pin D23 = DC motor direction
 - Arduino pin D11 = DC motor speed
-- Arduino pin D12 = Fan speed
+- Arduino pin D52 = Fan speed
 
 Buttons:
 
@@ -49,10 +49,12 @@ The ZIP files provided [here](https://github.com/nemocrys/exp-motor-control/blob
 ## Menu
 
 The LCD allows to adjust motor parameters using 3 buttons:
+
 - SWITCH: consecutively switch between parameters (LCD screens). **To apply the changed value, click to the last screen, until "Parameters changed" is displayed**. The second last screen shows current values of time and speed. The last screen is empty. Press the button again to switch to the first screen.
 - UP/DOWN: increase/decrease parameter value in predefined steps. A short press of 0.3 sec changes the value by one step. Holding the button for 3 s and 6 s increases the step by x10 and x100.
 
 Parameters currently implemented:
+
 - 01 V_H  (+-100%)   = Rotation velocity, high value
 - 02 V_M  (+-100%)   = Rotation velocity, mid value
 - 03 V_L  (+-100%)   = Rotation velocity, low value
@@ -61,9 +63,18 @@ Parameters currently implemented:
 - 06 T_TH (0-1000s)  = Transition time for high velocity
 - 07 T_TL (0-1000s)  = Transition time for low velocity
 - 08 V_P  (+-1000Hz) = Pull velocity (stepper motor)
-- 09 V_F  (0-100%) = Fan speed 
+- 09 V_F  (0-100%) = Fan speed
 
-The last parameter set is automatically stored in EEPROM memory (precision of once decimal place). It is loaded at Arduino startup.
+### Pull velocity setting for the MunCZ hardware setup
+
+- Pull velocity positive = clockwise rotation = translation up (pulling); DirPin LOW
+- Pull velocity negative = counter-clockwise rotation = translation down; DirPin HIGH
+
+### Using sketch file to set the EEPROM parameters 
+
+By default, the command saveparams() is active, which allows to overwrite the parameter set stored in the Arduino EEPROM memory with the values specified in the Arduino sketch file.
+Conversely, if the command loadparams() is active, the last parameter set which is stored in EEPROM memory is loaded at Arduino startup and the values from the sketch are ignored.
+
 
 ## Acknowledgements
 
